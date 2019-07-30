@@ -1,1 +1,1 @@
-# elastic-dispatcher
+# ElasticSearchWorker
