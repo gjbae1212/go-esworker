@@ -8,18 +8,22 @@ const (
 	V7
 )
 
+// ErrorHandler is called when an error is raised.
+type ErrorHandler func(error)
+
 // config is environment variable, which is used to dispatcher.
 type config struct {
-	version    ESVersion         // elastic search version
-	addrs      []string          // a list of elastic search nodes to use.
-	username   string            // username for http basic authentication.
-	password   string            // password for http basic authentication.
-	cloudId    string            // endpoint for elastic cloud.
-	apiKey     string            // base64-encoded token for authorization.
-	transport  http.RoundTripper // http transport object.
-	logger     *Logger           // intermediate logger.
-	queueSize  int               // as queue size, it is the maximum value that could store an action.
-	workerSize int               // worker size to currently run to process an action.
+	version      ESVersion         // elastic search version
+	addrs        []string          // a list of elastic search nodes to use.
+	username     string            // username for http basic authentication.
+	password     string            // password for http basic authentication.
+	cloudId      string            // endpoint for elastic cloud.
+	apiKey       string            // base64-encoded token for authorization.
+	transport    http.RoundTripper // http transport object.
+	logger       *Logger           // intermediate logger.
+	queueSize    int               // as queue size, it is the maximum value that could store an action.
+	workerSize   int               // worker size to currently run to process an action.
+	errorHandler ErrorHandler      // it is calling when an error raises.
 }
 
 // Option is something for dependency injection.
@@ -111,9 +115,16 @@ func WithQueueSizeOption(size int) OptionFunc {
 	}
 }
 
-// WithWorkerSizeOption has asscoiated worker size.
+// WithWorkerSizeOption has associated worker size.
 func WithWorkerSizeOption(size int) OptionFunc {
 	return func(cfg *config) {
 		cfg.workerSize = size
+	}
+}
+
+// WithErrorHandler has associated a handler called when an error is raised.
+func WithErrorHandler(h ErrorHandler) OptionFunc {
+	return func(cfg *config) {
+		cfg.errorHandler = h
 	}
 }

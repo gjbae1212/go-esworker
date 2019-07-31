@@ -1,6 +1,7 @@
 package esworker
 
 import (
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -98,4 +99,15 @@ func TestWithWorkerSizeOption(t *testing.T) {
 	f := WithWorkerSizeOption(20)
 	f.apply(cfg)
 	assert.Equal(20, cfg.workerSize)
+}
+
+func TestWithErrorHandler(t *testing.T) {
+	assert := assert.New(t)
+
+	cfg := &config{}
+	f := WithErrorHandler(func(err error) {
+		fmt.Println(err)
+	})
+	f.apply(cfg)
+	assert.NotEmpty(cfg.errorHandler)
 }
