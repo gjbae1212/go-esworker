@@ -5,6 +5,11 @@ import (
 	"net/http"
 )
 
+var (
+	defaultQueueSize  = 1000
+	defaultWorkerSize = 5
+)
+
 // TODO: support create or update or delete
 type (
 	// ErrorHandler is called when an error is raised.
@@ -26,7 +31,6 @@ type (
 	dispatcher struct {
 		cfg *config
 	}
-
 )
 
 // NewDispatcher is to make Dispatcher.
@@ -35,6 +39,8 @@ func NewDispatcher(opts ...Option) (Dispatcher, error) {
 
 	o := []Option{
 		WithTransportOption(http.DefaultTransport),
+		WithQueueSizeOption(defaultQueueSize),
+		WithWorkerSizeOption(defaultWorkerSize),
 	}
 
 	o = append(o, opts...)

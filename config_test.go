@@ -81,3 +81,21 @@ func TestWithLoggerOption(t *testing.T) {
 	f.apply(cfg)
 	assert.Equal(logger, cfg.logger)
 }
+
+func TestWithQueueSizeOption(t *testing.T) {
+	assert := assert.New(t)
+
+	cfg := &config{}
+	f := WithQueueSizeOption(10)
+	f.apply(cfg)
+	assert.Equal(10, cfg.queueSize)
+}
+
+func TestWithWorkerSizeOption(t *testing.T) {
+	assert := assert.New(t)
+
+	cfg := &config{}
+	f := WithWorkerSizeOption(20)
+	f.apply(cfg)
+	assert.Equal(20, cfg.workerSize)
+}

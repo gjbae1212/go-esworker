@@ -10,14 +10,16 @@ const (
 
 // config is environment variable, which is used to dispatcher.
 type config struct {
-	version   ESVersion         // elastic search version
-	addrs     []string          // a list of elastic search nodes to use.
-	username  string            // username for http basic authentication.
-	password  string            // password for http basic authentication.
-	cloudId   string            // endpoint for elastic cloud.
-	apiKey    string            // base64-encoded token for authorization.
-	transport http.RoundTripper // http transport object.
-	logger    *Logger           // logger
+	version    ESVersion         // elastic search version
+	addrs      []string          // a list of elastic search nodes to use.
+	username   string            // username for http basic authentication.
+	password   string            // password for http basic authentication.
+	cloudId    string            // endpoint for elastic cloud.
+	apiKey     string            // base64-encoded token for authorization.
+	transport  http.RoundTripper // http transport object.
+	logger     *Logger           // intermediate logger.
+	queueSize  int               // as queue size, it is the maximum value that could store an action.
+	workerSize int               // worker size to currently run to process an action.
 }
 
 // Option is something for dependency injection.
@@ -99,5 +101,19 @@ func WithTransportOption(tp http.RoundTripper) OptionFunc {
 func WithLoggerOption(logger *Logger) OptionFunc {
 	return func(cfg *config) {
 		cfg.logger = logger
+	}
+}
+
+// WithQueueSizeOption has associated queue size.
+func WithQueueSizeOption(size int) OptionFunc {
+	return func(cfg *config) {
+		cfg.queueSize = size
+	}
+}
+
+// WithWorkerSizeOption has asscoiated worker size.
+func WithWorkerSizeOption(size int) OptionFunc {
+	return func(cfg *config) {
+		cfg.workerSize = size
 	}
 }
