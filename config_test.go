@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
+	"time"
 
 	assert "github.com/stretchr/testify/assert"
 )
@@ -83,13 +84,13 @@ func TestWithLoggerOption(t *testing.T) {
 	assert.Equal(logger, cfg.logger)
 }
 
-func TestWithQueueSizeOption(t *testing.T) {
+func TestWithGlobalQueueSizeOption(t *testing.T) {
 	assert := assert.New(t)
 
 	cfg := &config{}
-	f := WithQueueSizeOption(10)
+	f := WithGlobalQueueSizeOption(10)
 	f.apply(cfg)
-	assert.Equal(10, cfg.queueSize)
+	assert.Equal(10, cfg.globalQueueSize)
 }
 
 func TestWithWorkerSizeOption(t *testing.T) {
@@ -99,6 +100,24 @@ func TestWithWorkerSizeOption(t *testing.T) {
 	f := WithWorkerSizeOption(20)
 	f.apply(cfg)
 	assert.Equal(20, cfg.workerSize)
+}
+
+func TestWithWorkerQueueSizeOption(t *testing.T) {
+	assert := assert.New(t)
+
+	cfg := &config{}
+	f := WithWorkerQueueSizeOption(20)
+	f.apply(cfg)
+	assert.Equal(20, cfg.workerQueueSize)
+}
+
+func TestWithWorkerWaitInterval(t *testing.T) {
+	assert := assert.New(t)
+
+	cfg := &config{}
+	f := WithWorkerWaitInterval(time.Second * 2)
+	f.apply(cfg)
+	assert.Equal(time.Second*2, cfg.workerWaitInterval)
 }
 
 func TestWithErrorHandler(t *testing.T) {

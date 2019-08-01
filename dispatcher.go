@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"net/http"
 	"sync"
+	"time"
 )
 
 var (
-	defaultQueueSize  = 1000
-	defaultWorkerSize = 5
+	defaultGlobalQueueSize    = 5000
+	defaultWorkerSize         = 5
+	defaultWorkerQueueSize    = 1000
+	defaultWorkerWaitInterval = time.Duration(2 * time.Second)
 )
 
 // TODO: support create or update or delete
@@ -134,8 +137,10 @@ func NewDispatcher(opts ...Option) (Dispatcher, error) {
 			fmt.Printf("[err] %+v\n", err)
 		}),
 		WithTransportOption(http.DefaultTransport),
-		WithQueueSizeOption(defaultQueueSize),
+		WithGlobalQueueSizeOption(defaultGlobalQueueSize),
 		WithWorkerSizeOption(defaultWorkerSize),
+		WithWorkerQueueSizeOption(defaultWorkerQueueSize),
+		WithWorkerWaitInterval(defaultWorkerWaitInterval),
 	}
 
 	o = append(o, opts...)
@@ -162,6 +167,8 @@ func createBreaker(cfg *config) (*breaker, error) {
 			id:           i,
 			pool:         pool,
 			pipe:         make(chan Action),
+			maxQueueSize: cfg.workerQueueSize,
+			waitInterval: cfg.workerWaitInterval,
 			quit:         make(chan bool),
 			errorHandler: cfg.errorHandler,
 		}
@@ -169,7 +176,7 @@ func createBreaker(cfg *config) (*breaker, error) {
 	}
 
 	return &breaker{
-		queue:        make(chan Action, cfg.queueSize),
+		queue:        make(chan Action, cfg.globalQueueSize),
 		pool:         pool,
 		workers:      workers,
 		errorHandler: cfg.errorHandler,

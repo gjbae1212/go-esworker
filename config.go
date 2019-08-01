@@ -1,6 +1,9 @@
 package esworker
 
-import "net/http"
+import (
+	"net/http"
+	"time"
+)
 
 const (
 	V5 ESVersion = iota
@@ -13,17 +16,19 @@ type ErrorHandler func(error)
 
 // config is environment variable, which is used to dispatcher.
 type config struct {
-	version      ESVersion         // elastic search version
-	addrs        []string          // a list of elastic search nodes to use.
-	username     string            // username for http basic authentication.
-	password     string            // password for http basic authentication.
-	cloudId      string            // endpoint for elastic cloud.
-	apiKey       string            // base64-encoded token for authorization.
-	transport    http.RoundTripper // http transport object.
-	logger       *Logger           // intermediate logger.
-	queueSize    int               // as queue size, it is the maximum value that could store an action.
-	workerSize   int               // worker size to currently run to process an action.
-	errorHandler ErrorHandler      // it is calling when an error raises.
+	version            ESVersion         // elastic search version
+	addrs              []string          // a list of elastic search nodes to use.
+	username           string            // username for http basic authentication.
+	password           string            // password for http basic authentication.
+	cloudId            string            // endpoint for elastic cloud.
+	apiKey             string            // base64-encoded token for authorization.
+	transport          http.RoundTripper // http transport object.
+	logger             *Logger           // intermediate logger.
+	globalQueueSize    int               // as queue size, it is the maximum value that could store an action.
+	workerSize         int               // worker size to currently run to process an action.
+	workerQueueSize    int               // worker queue size to limit action pushing.
+	workerWaitInterval time.Duration     // it is a wait time that would forcedly send a request to the elasticsearch when no event.
+	errorHandler       ErrorHandler      // it is calling when an error raises.
 }
 
 // Option is something for dependency injection.
@@ -108,17 +113,31 @@ func WithLoggerOption(logger *Logger) OptionFunc {
 	}
 }
 
-// WithQueueSizeOption has associated queue size.
-func WithQueueSizeOption(size int) OptionFunc {
+// WithGlobalQueueSizeOption has associated queue size in global.
+func WithGlobalQueueSizeOption(size int) OptionFunc {
 	return func(cfg *config) {
-		cfg.queueSize = size
+		cfg.globalQueueSize = size
 	}
 }
 
-// WithWorkerSizeOption has associated worker size.
+// WithWorkerSizeOption has associated size for running workers.
 func WithWorkerSizeOption(size int) OptionFunc {
 	return func(cfg *config) {
 		cfg.workerSize = size
+	}
+}
+
+// WithWorkerQueueSizeOption has associated queue size at a worker.
+func WithWorkerQueueSizeOption(size int) OptionFunc {
+	return func(cfg *config) {
+		cfg.workerQueueSize = size
+	}
+}
+
+// WithWorkerWaitInterval has associated wait time at a worker.
+func WithWorkerWaitInterval(d time.Duration) OptionFunc {
+	return func(cfg *config) {
+		cfg.workerWaitInterval = d
 	}
 }
 
