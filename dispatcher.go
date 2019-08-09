@@ -9,18 +9,20 @@ import (
 )
 
 var (
+	defaultAddresses          = []string{"http://localhost:9200"}
 	defaultGlobalQueueSize    = 5000
 	defaultWorkerSize         = 5
 	defaultWorkerQueueSize    = 1000
 	defaultWorkerWaitInterval = time.Duration(2 * time.Second)
 )
 
-// TODO: support create or update or delete
 type (
 	// Action is an operation that could create or update or delete to document.
 	Action interface {
+		GetOperation() ESOperation
 		GetIndex() string
-		GetType() string
+		GetDocType() string
+		GetID() string
 		GetDoc() map[string]interface{}
 	}
 
@@ -53,6 +55,20 @@ type (
 func (dp *dispatcher) AddAction(ctx context.Context, action Action) error {
 	if ctx == nil || action == nil {
 		return fmt.Errorf("[err] AddAction empty params")
+	}
+
+	if action.GetIndex() == "" {
+		return fmt.Errorf("[err] AddAction (required index)")
+	}
+
+	if action.GetOperation() == ES_CREATE && action.GetID() == "" {
+		return fmt.Errorf("[err] AddAction (if an operation is a create, it is required id)")
+	}
+
+	if action.GetOperation() == ES_UPDATE {
+		if _, ok := action.GetDoc()["doc"]; !ok {
+			return fmt.Errorf("[err] AddAction (if an operation is a update, it is required doc key)")
+		}
 	}
 
 	select {
@@ -133,14 +149,16 @@ func NewDispatcher(opts ...Option) (Dispatcher, error) {
 	cfg := &config{}
 
 	o := []Option{
-		WithErrorHandler(func(err error) {
-			fmt.Printf("[err] %+v\n", err)
-		}),
+		WithESVersionOption(V6), // default ES Version as v6
+		WithAddressesOption(defaultAddresses), // default is http://localhost:9200
 		WithTransportOption(http.DefaultTransport),
 		WithGlobalQueueSizeOption(defaultGlobalQueueSize),
 		WithWorkerSizeOption(defaultWorkerSize),
 		WithWorkerQueueSizeOption(defaultWorkerQueueSize),
 		WithWorkerWaitInterval(defaultWorkerWaitInterval),
+		WithErrorHandler(func(err error) {
+			fmt.Printf("[err] %+v\n", err)
+		}),
 	}
 
 	o = append(o, opts...)
@@ -155,6 +173,7 @@ func NewDispatcher(opts ...Option) (Dispatcher, error) {
 	return &dispatcher{cfg: cfg, bk: bk}, nil
 }
 
+// createBreaker is to make breaker.
 func createBreaker(cfg *config) (*breaker, error) {
 	if cfg == nil {
 		return nil, fmt.Errorf("[err] createBreaker empty params")
@@ -163,6 +182,10 @@ func createBreaker(cfg *config) (*breaker, error) {
 	pool := make(chan chan Action, cfg.workerSize)
 	workers := make([]*worker, cfg.workerSize, cfg.workerSize)
 	for i := 0; i < cfg.workerSize; i++ {
+		client, err := createESProxy(cfg)
+		if err != nil {
+			return nil, err
+		}
 		w := &worker{
 			id:           i,
 			pool:         pool,
@@ -171,6 +194,7 @@ func createBreaker(cfg *config) (*breaker, error) {
 			waitInterval: cfg.workerWaitInterval,
 			quit:         make(chan bool),
 			errorHandler: cfg.errorHandler,
+			esClient:     client,
 		}
 		workers = append(workers, w)
 	}

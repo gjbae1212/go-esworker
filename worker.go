@@ -4,6 +4,7 @@ import "time"
 
 // worker will be processing actions with bulk-operation.
 type worker struct {
+	esClient     ESProxy
 	id           int
 	pool         chan chan Action
 	pipe         chan Action

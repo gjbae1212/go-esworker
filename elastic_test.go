@@ -1,11 +1,14 @@
 package esworker
 
 import (
+	"context"
 	"fmt"
+	"github.com/testcontainers/testcontainers-go"
 	"net/http"
-	"os"
 	"testing"
 	"time"
+
+	"github.com/testcontainers/testcontainers-go/wait"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -132,6 +135,7 @@ func TestEsproxy(t *testing.T) {
 func TestESProxy_Bulk(t *testing.T) {
 	assert := assert.New(t)
 
+	ctx := context.Background()
 	now := time.Now().UnixNano()
 
 	// doc custom
@@ -188,10 +192,10 @@ func TestESProxy_Bulk(t *testing.T) {
 	// doc default
 	acts2 := []Action{
 		&mockAction{
-			op:    ES_INDEX,
-			index: "allan",
+			op:      ES_INDEX,
+			index:   "allan",
 			docType: "mycustom2",
-			id:    fmt.Sprintf("%d", now+1),
+			id:      fmt.Sprintf("%d", now+1),
 			doc: map[string]interface{}{
 				"field1": 200,
 				"field2": "index-_doc",
@@ -236,96 +240,137 @@ func TestESProxy_Bulk(t *testing.T) {
 		},
 	}
 
-	if os.Getenv("MOCK_ES5") != "" {
-		proxy, err := createESProxy(testCfg(V5))
-		assert.NoError(err)
+	// [INFO] `testcontainers` is third party library to start docker container using docker golang library.
 
-		_, err = proxy.Bulk(errActs1)
-		assert.Error(err)
-		_, err = proxy.Bulk(errActs2)
-		assert.Error(err)
-
-		result, err := proxy.Bulk(acts)
-		assert.NoError(err)
-		success, fail := result.Count()
-		assert.Equal(5, success)
-		assert.Equal(0, fail)
-
-		result, err = proxy.Bulk(acts2)
-		assert.NoError(err)
-		success, fail = result.Count()
-		assert.Equal(1, success)
-		assert.Equal(0, fail)
-
-		result, err = proxy.Bulk(acts3)
-		assert.NoError(err)
-		success, fail = result.Count()
-		success, fail = result.Count()
-		assert.Equal(1, success)
-		assert.Equal(0, fail)
+	// mock es5
+	reqes5 := testcontainers.ContainerRequest{
+		Image:        "elasticsearch:5.6",
+		Name:         "es5-mock",
+		Env:          map[string]string{"discovery.type": "single-node"},
+		ExposedPorts: []string{"9200:9200/tcp", "9300:9300/tcp"},
+		WaitingFor:   wait.ForLog("started"),
 	}
+	es5Mock, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: reqes5,
+		Started:          true,
+	})
+	assert.NoError(err)
 
-	if os.Getenv("MOCK_ES6") != "" {
-		proxy, err := createESProxy(testCfg(V6))
-		assert.NoError(err)
+	proxy, err := createESProxy(testCfg(V5))
+	assert.NoError(err)
 
-		_, err = proxy.Bulk(errActs1)
-		assert.Error(err)
-		_, err = proxy.Bulk(errActs2)
-		assert.Error(err)
+	_, err = proxy.Bulk(errActs1)
+	assert.Error(err)
+	_, err = proxy.Bulk(errActs2)
+	assert.Error(err)
 
-		result, err := proxy.Bulk(acts)
-		assert.NoError(err)
-		success, fail := result.Count()
-		assert.Equal(5, success)
-		assert.Equal(0, fail)
+	result, err := proxy.Bulk(acts)
+	assert.NoError(err)
+	success, fail := result.Count()
+	assert.Equal(5, success)
+	assert.Equal(0, fail)
 
-		// not insert
-		result, err = proxy.Bulk(acts2)
-		assert.NoError(err)
-		success, fail = result.Count()
-		assert.Equal(0, success)
-		assert.Equal(1, fail)
+	result, err = proxy.Bulk(acts2)
+	assert.NoError(err)
+	success, fail = result.Count()
+	assert.Equal(1, success)
+	assert.Equal(0, fail)
 
-		// default mycustom
-		result, err = proxy.Bulk(acts3)
-		assert.NoError(err)
-		success, fail = result.Count()
-		success, fail = result.Count()
-		assert.Equal(1, success)
-		assert.Equal(0, fail)
+	result, err = proxy.Bulk(acts3)
+	assert.NoError(err)
+	success, fail = result.Count()
+	success, fail = result.Count()
+	assert.Equal(1, success)
+	assert.Equal(0, fail)
+	es5Mock.Terminate(ctx)
+
+	// mock es6
+	reqes6 := testcontainers.ContainerRequest{
+		Image:        "elasticsearch:6.8.0",
+		Name:         "es5-mock",
+		Env:          map[string]string{"discovery.type": "single-node"},
+		ExposedPorts: []string{"9200:9200/tcp", "9300:9300/tcp"},
+		WaitingFor:   wait.ForLog("started"),
 	}
+	es6Mock, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: reqes6,
+		Started:          true,
+	})
+	assert.NoError(err)
 
-	if os.Getenv("MOCK_ES7") != "" {
-		proxy, err := createESProxy(testCfg(V7))
-		assert.NoError(err)
+	proxy, err = createESProxy(testCfg(V6))
+	assert.NoError(err)
 
-		_, err = proxy.Bulk(errActs1)
-		assert.Error(err)
-		_, err = proxy.Bulk(errActs2)
-		assert.Error(err)
+	_, err = proxy.Bulk(errActs1)
+	assert.Error(err)
+	_, err = proxy.Bulk(errActs2)
+	assert.Error(err)
 
-		result, err := proxy.Bulk(acts)
-		assert.NoError(err)
-		success, fail := result.Count()
-		assert.Equal(5, success)
-		assert.Equal(0, fail)
+	result, err = proxy.Bulk(acts)
+	assert.NoError(err)
+	success, fail = result.Count()
+	assert.Equal(5, success)
+	assert.Equal(0, fail)
 
-		// not insert
-		result, err = proxy.Bulk(acts2)
-		assert.NoError(err)
-		success, fail = result.Count()
-		assert.Equal(0, success)
-		assert.Equal(1, fail)
+	// not insert
+	result, err = proxy.Bulk(acts2)
+	assert.NoError(err)
+	success, fail = result.Count()
+	assert.Equal(0, success)
+	assert.Equal(1, fail)
 
-		// default mycustom
-		result, err = proxy.Bulk(acts3)
-		assert.NoError(err)
-		success, fail = result.Count()
-		success, fail = result.Count()
-		assert.Equal(1, success)
-		assert.Equal(0, fail)
+	// default mycustom
+	result, err = proxy.Bulk(acts3)
+	assert.NoError(err)
+	success, fail = result.Count()
+	success, fail = result.Count()
+	assert.Equal(1, success)
+	assert.Equal(0, fail)
+	es6Mock.Terminate(ctx)
+
+	// mock es7
+	reqes7 := testcontainers.ContainerRequest{
+		Image:        "elasticsearch:7.3.0",
+		Name:         "es5-mock",
+		Env:          map[string]string{"discovery.type": "single-node"},
+		ExposedPorts: []string{"9200:9200/tcp", "9300:9300/tcp"},
+		WaitingFor:   wait.ForLog("started"),
 	}
+	es7Mock, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: reqes7,
+		Started:          true,
+	})
+	assert.NoError(err)
+
+	proxy, err = createESProxy(testCfg(V7))
+	assert.NoError(err)
+
+	_, err = proxy.Bulk(errActs1)
+	assert.Error(err)
+	_, err = proxy.Bulk(errActs2)
+	assert.Error(err)
+
+	result, err = proxy.Bulk(acts)
+	assert.NoError(err)
+	success, fail = result.Count()
+	assert.Equal(5, success)
+	assert.Equal(0, fail)
+
+	// not insert
+	result, err = proxy.Bulk(acts2)
+	assert.NoError(err)
+	success, fail = result.Count()
+	assert.Equal(0, success)
+	assert.Equal(1, fail)
+
+	// default mycustom
+	result, err = proxy.Bulk(acts3)
+	assert.NoError(err)
+	success, fail = result.Count()
+	success, fail = result.Count()
+	assert.Equal(1, success)
+	assert.Equal(0, fail)
+	es7Mock.Terminate(ctx)
 }
 
 func testCfg(v ESVersion) *config {

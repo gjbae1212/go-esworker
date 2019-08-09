@@ -7,4 +7,5 @@ require (
 	github.com/elastic/go-elasticsearch/v6 v6.8.3-0.20190730133638-9744e9413614
 	github.com/elastic/go-elasticsearch/v7 v7.2.1-0.20190730133637-a265bbe6fda6
 	github.com/stretchr/testify v1.3.0
+	github.com/testcontainers/testcontainers-go v0.0.5
 )
