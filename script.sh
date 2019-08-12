@@ -12,7 +12,7 @@ function test
 function bench
 {
   # 10000 iterator
-  go test -v -run=BenchmarkDispatcher_AddAction -bench=. -benchmem -benchtime 10000x
+  go test -v -run=BenchmarkDispatcher_AddAction -bench=. -benchmem -benchtime 10005x
 }
 
 

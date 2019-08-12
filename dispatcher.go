@@ -110,11 +110,15 @@ func (bk *breaker) start() {
 }
 
 func (bk *breaker) stop() {
-	bk.running = false
+	bk.quit <- true
 	for _, w := range bk.workers {
 		w.stop()
 	}
-	bk.quit <- true
+	// delete all workers to be waiting
+	for len(bk.pool) > 0 {
+		<-bk.pool
+	}
+	bk.running = false
 }
 
 func (bk *breaker) booking() {
@@ -127,6 +131,7 @@ func (bk *breaker) booking() {
 		}
 	}()
 
+Loop:
 	for {
 		select {
 		case act := <-bk.queue: // pop action
@@ -135,11 +140,7 @@ func (bk *breaker) booking() {
 			// send action to worker pipe
 			workerPipe <- act
 		case <-bk.quit: // exit breaker
-			// delete workers to be waiting
-			for len(bk.pool) > 0 {
-				<-bk.pool
-			}
-			return
+			break Loop
 		}
 	}
 }
@@ -149,7 +150,7 @@ func NewDispatcher(opts ...Option) (Dispatcher, error) {
 	cfg := &config{}
 
 	o := []Option{
-		WithESVersionOption(V6), // default ES Version as v6
+		WithESVersionOption(V6),               // default ES Version as v6
 		WithAddressesOption(defaultAddresses), // default is http://localhost:9200
 		WithTransportOption(http.DefaultTransport),
 		WithGlobalQueueSizeOption(defaultGlobalQueueSize),

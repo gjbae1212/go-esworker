@@ -184,6 +184,66 @@ func TestDispatcher_Stop(t *testing.T) {
 	assert.NoError(err)
 }
 
+func TestProcessDispatcher(t *testing.T) {
+	assert := assert.New(t)
+
+	ctx := context.Background()
+	escreq := testcontainers.ContainerRequest{
+		Image:        "elasticsearch:6.8.0",
+		Name:         "es6-dispatcher",
+		Env:          map[string]string{"discovery.type": "single-node"},
+		ExposedPorts: []string{"9200:9200/tcp", "9300:9300/tcp"},
+		WaitingFor:   wait.ForLog("started"),
+	}
+	mockES, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: escreq,
+		Started:          true,
+	})
+	assert.NoError(err)
+	defer mockES.Terminate(ctx)
+
+	dp, err := NewDispatcher(
+		WithESVersionOption(V6),
+		WithGlobalQueueSizeOption(1000),
+		WithErrorHandler(func(err error) {
+			fmt.Printf("[err] %+v\n", err)
+		}),
+	)
+	assert.NoError(err)
+	err = dp.Start()
+	assert.NoError(err)
+
+	for i := 0 ; i < 9999; i++ {
+		m := &mockAction{
+			op:      ES_INDEX,
+			index:   "allan",
+			docType: "benchmark-index",
+			doc:     map[string]interface{}{"field1": 200},
+		}
+		err := dp.AddAction(ctx, m)
+		assert.NoError(err)
+	}
+
+	fmt.Println("before stop")
+	dp.(*dispatcher).Stop()
+	fmt.Println("after start")
+
+	dp.(*dispatcher).Start()
+	for i := 0 ; i < 9999; i++ {
+		m := &mockAction{
+			op:      ES_INDEX,
+			index:   "allan",
+			docType: "benchmark-index",
+			doc:     map[string]interface{}{"field1": 200},
+		}
+		err := dp.AddAction(ctx, m)
+		assert.NoError(err)
+	}
+	fmt.Println("before stop")
+	dp.(*dispatcher).Stop()
+	fmt.Println("after start")
+}
+
 var mockBenchmarkFlag bool
 func BenchmarkDispatcher_AddAction(b *testing.B) {
 	if !mockBenchmarkFlag {
