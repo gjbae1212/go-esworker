@@ -5,13 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"sync"
-	"time"
-
 	es5 "github.com/elastic/go-elasticsearch/v5"
 	es6 "github.com/elastic/go-elasticsearch/v6"
 	es7 "github.com/elastic/go-elasticsearch/v7"
+	"io"
+	"sync"
 
 	es5_logger "github.com/elastic/go-elasticsearch/v5/estransport"
 	es6_logger "github.com/elastic/go-elasticsearch/v6/estransport"
@@ -123,7 +121,7 @@ func (bulk *ESResponseBulk) Count() (success int, fail int) {
 
 // ESProxy is an interface that actually request the elasticserach.
 type ESProxy interface {
-	Bulk(acts []Action) (bulk *ESResponseBulk, err error)
+	Bulk(ctx context.Context, acts []Action) (bulk *ESResponseBulk, err error)
 }
 
 type esproxy struct {
@@ -139,7 +137,7 @@ type esproxy struct {
 }
 
 // Bulk is to request a bulk action to the elasticsearch.
-func (ep *esproxy) Bulk(acts []Action) (bulk *ESResponseBulk, err error) {
+func (ep *esproxy) Bulk(ctx context.Context, acts []Action) (bulk *ESResponseBulk, err error) {
 	result := &ESResponseBulk{}
 	if len(acts) == 0 {
 		return
@@ -150,10 +148,6 @@ func (ep *esproxy) Bulk(acts []Action) (bulk *ESResponseBulk, err error) {
 		err = suberr
 		return
 	}
-
-	// set request timeout.
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
-	defer cancel()
 
 	// response body
 	var body io.ReadCloser

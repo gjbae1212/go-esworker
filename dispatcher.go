@@ -180,7 +180,7 @@ func createBreaker(cfg *config) (*breaker, error) {
 	}
 
 	pool := make(chan chan Action, cfg.workerSize)
-	workers := make([]*worker, cfg.workerSize, cfg.workerSize)
+	workers := make([]*worker, 0, cfg.workerSize)
 	for i := 0; i < cfg.workerSize; i++ {
 		client, err := createESProxy(cfg)
 		if err != nil {

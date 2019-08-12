@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/testcontainers/testcontainers-go"
-	"net/http"
 	"testing"
 	"time"
 
@@ -12,36 +11,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 )
-
-type (
-	mockAction struct {
-		op      ESOperation
-		index   string
-		docType string
-		id      string
-		doc     map[string]interface{}
-	}
-)
-
-func (mockAct *mockAction) GetOperation() ESOperation {
-	return mockAct.op
-}
-
-func (mockAct *mockAction) GetIndex() string {
-	return mockAct.index
-}
-
-func (mockAct *mockAction) GetDocType() string {
-	return mockAct.docType
-}
-
-func (mockAct *mockAction) GetID() string {
-	return mockAct.id
-}
-
-func (mockAct *mockAction) GetDoc() map[string]interface{} {
-	return mockAct.doc
-}
 
 func TestESResponseBulk_Count(t *testing.T) {
 	assert := assert.New(t)
@@ -259,24 +228,24 @@ func TestESProxy_Bulk(t *testing.T) {
 	proxy, err := createESProxy(testCfg(V5))
 	assert.NoError(err)
 
-	_, err = proxy.Bulk(errActs1)
+	_, err = proxy.Bulk(ctx, errActs1)
 	assert.Error(err)
-	_, err = proxy.Bulk(errActs2)
+	_, err = proxy.Bulk(ctx, errActs2)
 	assert.Error(err)
 
-	result, err := proxy.Bulk(acts)
+	result, err := proxy.Bulk(ctx, acts)
 	assert.NoError(err)
 	success, fail := result.Count()
 	assert.Equal(5, success)
 	assert.Equal(0, fail)
 
-	result, err = proxy.Bulk(acts2)
+	result, err = proxy.Bulk(ctx, acts2)
 	assert.NoError(err)
 	success, fail = result.Count()
 	assert.Equal(1, success)
 	assert.Equal(0, fail)
 
-	result, err = proxy.Bulk(acts3)
+	result, err = proxy.Bulk(ctx, acts3)
 	assert.NoError(err)
 	success, fail = result.Count()
 	success, fail = result.Count()
@@ -287,7 +256,7 @@ func TestESProxy_Bulk(t *testing.T) {
 	// mock es6
 	reqes6 := testcontainers.ContainerRequest{
 		Image:        "elasticsearch:6.8.0",
-		Name:         "es5-mock",
+		Name:         "es6-mock",
 		Env:          map[string]string{"discovery.type": "single-node"},
 		ExposedPorts: []string{"9200:9200/tcp", "9300:9300/tcp"},
 		WaitingFor:   wait.ForLog("started"),
@@ -301,26 +270,26 @@ func TestESProxy_Bulk(t *testing.T) {
 	proxy, err = createESProxy(testCfg(V6))
 	assert.NoError(err)
 
-	_, err = proxy.Bulk(errActs1)
+	_, err = proxy.Bulk(ctx, errActs1)
 	assert.Error(err)
-	_, err = proxy.Bulk(errActs2)
+	_, err = proxy.Bulk(ctx, errActs2)
 	assert.Error(err)
 
-	result, err = proxy.Bulk(acts)
+	result, err = proxy.Bulk(ctx, acts)
 	assert.NoError(err)
 	success, fail = result.Count()
 	assert.Equal(5, success)
 	assert.Equal(0, fail)
 
 	// not insert
-	result, err = proxy.Bulk(acts2)
+	result, err = proxy.Bulk(ctx, acts2)
 	assert.NoError(err)
 	success, fail = result.Count()
 	assert.Equal(0, success)
 	assert.Equal(1, fail)
 
 	// default mycustom
-	result, err = proxy.Bulk(acts3)
+	result, err = proxy.Bulk(ctx, acts3)
 	assert.NoError(err)
 	success, fail = result.Count()
 	success, fail = result.Count()
@@ -331,7 +300,7 @@ func TestESProxy_Bulk(t *testing.T) {
 	// mock es7
 	reqes7 := testcontainers.ContainerRequest{
 		Image:        "elasticsearch:7.3.0",
-		Name:         "es5-mock",
+		Name:         "es7-mock",
 		Env:          map[string]string{"discovery.type": "single-node"},
 		ExposedPorts: []string{"9200:9200/tcp", "9300:9300/tcp"},
 		WaitingFor:   wait.ForLog("started"),
@@ -345,49 +314,30 @@ func TestESProxy_Bulk(t *testing.T) {
 	proxy, err = createESProxy(testCfg(V7))
 	assert.NoError(err)
 
-	_, err = proxy.Bulk(errActs1)
+	_, err = proxy.Bulk(ctx, errActs1)
 	assert.Error(err)
-	_, err = proxy.Bulk(errActs2)
+	_, err = proxy.Bulk(ctx, errActs2)
 	assert.Error(err)
 
-	result, err = proxy.Bulk(acts)
+	result, err = proxy.Bulk(ctx, acts)
 	assert.NoError(err)
 	success, fail = result.Count()
 	assert.Equal(5, success)
 	assert.Equal(0, fail)
 
 	// not insert
-	result, err = proxy.Bulk(acts2)
+	result, err = proxy.Bulk(ctx, acts2)
 	assert.NoError(err)
 	success, fail = result.Count()
 	assert.Equal(0, success)
 	assert.Equal(1, fail)
 
 	// default mycustom
-	result, err = proxy.Bulk(acts3)
+	result, err = proxy.Bulk(ctx, acts3)
 	assert.NoError(err)
 	success, fail = result.Count()
 	success, fail = result.Count()
 	assert.Equal(1, success)
 	assert.Equal(0, fail)
 	es7Mock.Terminate(ctx)
-}
-
-func testCfg(v ESVersion) *config {
-	cfg := &config{}
-	o := []Option{
-		WithESVersionOption(v),
-		WithTransportOption(http.DefaultTransport),
-		WithGlobalQueueSizeOption(defaultGlobalQueueSize),
-		WithWorkerSizeOption(defaultWorkerSize),
-		WithWorkerQueueSizeOption(defaultWorkerQueueSize),
-		WithWorkerWaitInterval(defaultWorkerWaitInterval),
-		WithErrorHandler(func(err error) {
-			fmt.Printf("[err] %+v\n", err)
-		}),
-	}
-	for _, opt := range o {
-		opt.apply(cfg)
-	}
-	return cfg
 }
