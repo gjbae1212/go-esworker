@@ -53,8 +53,12 @@ type (
 
 // AddAction pushes an action to queue.
 func (dp *dispatcher) AddAction(ctx context.Context, action Action) error {
+	if !dp.bk.running {
+		return fmt.Errorf("[err] AddAction (dispatcher not running)")
+	}
+
 	if ctx == nil || action == nil {
-		return fmt.Errorf("[err] AddAction empty params")
+		return fmt.Errorf("[err] AddAction (empty params)")
 	}
 
 	if action.GetIndex() == "" {
@@ -110,15 +114,32 @@ func (bk *breaker) start() {
 }
 
 func (bk *breaker) stop() {
+	bk.running = false
+	// wait until all data in queue are consumed.
+	if len(bk.queue) > 0 {
+	Empty:
+		for {
+			select {
+			case <-time.After(100 * time.Millisecond):
+				if len(bk.queue) == 0 {
+					break Empty
+				}
+			}
+		}
+	}
+
+	// stop breaker
 	bk.quit <- true
+
+	// stop worker
 	for _, w := range bk.workers {
 		w.stop()
 	}
+
 	// delete all workers to be waiting
 	for len(bk.pool) > 0 {
 		<-bk.pool
 	}
-	bk.running = false
 }
 
 func (bk *breaker) booking() {

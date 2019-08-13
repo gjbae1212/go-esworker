@@ -120,6 +120,8 @@ func TestDispatcher_AddAction(t *testing.T) {
 		}),
 	)
 	assert.NoError(err)
+	err = d.Start()
+	assert.NoError(err)
 
 	tests := map[string]struct {
 		input   Action
@@ -213,7 +215,7 @@ func TestProcessDispatcher(t *testing.T) {
 	err = dp.Start()
 	assert.NoError(err)
 
-	for i := 0 ; i < 9999; i++ {
+	for i := 0; i < 9999; i++ {
 		m := &mockAction{
 			op:      ES_INDEX,
 			index:   "allan",
@@ -226,10 +228,9 @@ func TestProcessDispatcher(t *testing.T) {
 
 	fmt.Println("before stop")
 	dp.(*dispatcher).Stop()
-	fmt.Println("after start")
-
+	fmt.Println("after stop")
 	dp.(*dispatcher).Start()
-	for i := 0 ; i < 9999; i++ {
+	for i := 0; i < 9999; i++ {
 		m := &mockAction{
 			op:      ES_INDEX,
 			index:   "allan",
@@ -241,10 +242,12 @@ func TestProcessDispatcher(t *testing.T) {
 	}
 	fmt.Println("before stop")
 	dp.(*dispatcher).Stop()
-	fmt.Println("after start")
+	fmt.Println("after stop")
+	time.Sleep(1 * time.Second)
 }
 
 var mockBenchmarkFlag bool
+
 func BenchmarkDispatcher_AddAction(b *testing.B) {
 	if !mockBenchmarkFlag {
 		mockBenchmarkFlag = true

@@ -53,9 +53,6 @@ Loop:
 				w.errorHandler(err)
 			}
 		case <-w.quit: // exit loop.
-			if err := w.process(); err != nil { // processing rest jobs.
-				w.errorHandler(err)
-			}
 			break Loop
 		}
 	}
@@ -65,6 +62,10 @@ Loop:
 // stop is to stop loop
 func (w *worker) stop() {
 	w.quit <- true
+	// processing rest jobs.
+	if err := w.process(); err != nil {
+		w.errorHandler(err)
+	}
 }
 
 // enqueue adds action to a queue.
