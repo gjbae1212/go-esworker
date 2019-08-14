@@ -119,7 +119,22 @@ A list to support the parameters below.
 ### Action Interface
 To deal with operation as insert and update and delete to, you should make a struct which is implementing `esworker.Action` interface.
 ```go
-// Example
+// generate and start dispatcher 
+dispatcher, _ := esworker.NewDispatcher()
+dispatcher.Start()
+
+// Ex) Standard Action Example
+act := &esworker.StandardAction{
+	Op: ES_CREATE
+	Index: "sample",
+	DocType: "_doc",
+	Id: "test-id",
+	Doc: map[string]interface{}{"field": 1},
+}
+dispatcher.AddAction(context.Background(), act)
+
+
+// Ex) Custom Action Example
 sampleAction struct {}
 
 func (act *sampleAction) GetOperation() esworker.ESOperation {
@@ -146,8 +161,6 @@ func (act *sampleAction) GetID() string {
 func (act *sampleAction) GetDoc() map[string]interface{} {
 	//return map[string]interface{}{}
 }
-
-dispatcher, _ := esworker.NewDispatcher()
 dispatcher.AddAction(context.Background(), &sampleAction{})
 
 ``` 
