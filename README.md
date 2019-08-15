@@ -3,9 +3,9 @@
 It is support to an infrastructure on AWS, GCP, Elastic Cloud, and so on.
 
 ## Installation
-``bash
+```bash
 go get -u github.com/gjbae1212/go-esworker
-``
+```
 
 ## Usage
 ```go
