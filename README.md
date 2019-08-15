@@ -16,36 +16,6 @@ import (
 	"github.com/gjbae1212/go-esworker"
 )
 
-type (
-	myAction struct {
-    		op      esworker.ESOperation
-    		index   string
-    		docType string
-    		id      string
-    		doc     map[string]interface{}
-    	}
-)
-
-func (a *myAction) GetOperation() esworker.ESOperation {
-	return mockAct.op
-}
-
-func (a *myAction) GetIndex() string {
-	return mockAct.index
-}
-
-func (a *myAction) GetDocType() string {
-	return mockAct.docType
-}
-
-func (a *myAction) GetID() string {
-	return mockAct.id
-}
-
-func (a *myAction) GetDoc() map[string]interface{} {
-	return mockAct.doc
-}
-
 func main() {
 
 	// Create dispatcher
@@ -70,7 +40,7 @@ func main() {
 	// Process operations in bulk.
 	ctx := context.Background()
 	// create doc
-	dispatcher.AddAction(ctx, &myAction{
+	dispatcher.AddAction(ctx, &esworker.StandardAction{
 		op:    esworker.ES_CREATE,
 		index: "allan",
 		id:    "1",
@@ -78,7 +48,7 @@ func main() {
 	})
 
 	// update doc
-	dispatcher.AddAction(ctx, &myAction{
+	dispatcher.AddAction(ctx, &esworker.StandardAction{
 		op:    esworker.ES_UPDATE,
 		index: "allan",
 		id:    "1",
@@ -86,7 +56,7 @@ func main() {
 	})
 
 	// delete doc
-	dispatcher.AddAction(ctx, &myAction{
+	dispatcher.AddAction(ctx, &esworker.StandardAction{
 		op:    esworker.ES_DELETE,
 		index: "allan",
 		id:    "1",
