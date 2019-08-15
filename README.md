@@ -87,7 +87,7 @@ A list to support the parameters below.
 
 
 ### Action Interface
-To deal with operation as insert and update and delete to, you should make a struct which is implementing `esworker.Action` interface.
+To deal with operation as insert and update and delete to, you would use to the `StandardAction` struct or a struct which is implementing `esworker.Action` interface.
 ```go
 // generate and start dispatcher 
 dispatcher, _ := esworker.NewDispatcher()
@@ -134,7 +134,7 @@ func (act *sampleAction) GetDoc() map[string]interface{} {
 dispatcher.AddAction(context.Background(), &sampleAction{})
 
 ``` 
-It must implement 5 methods.  
+If you will make to a custom struct which is implementing `esworker.Action` interface, it must implement 5 methods.  
 
 | name          | description |
 |---------------|----------------------------------------------|
