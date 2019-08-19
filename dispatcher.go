@@ -9,7 +9,6 @@ import (
 )
 
 var (
-	defaultAddresses          = []string{"http://localhost:9200"}
 	defaultGlobalQueueSize    = 5000
 	defaultWorkerSize         = 5
 	defaultWorkerQueueSize    = 1000
@@ -171,8 +170,7 @@ func NewDispatcher(opts ...Option) (Dispatcher, error) {
 	cfg := &config{}
 
 	o := []Option{
-		WithESVersionOption(V6),               // default ES Version as v6
-		WithAddressesOption(defaultAddresses), // default is http://localhost:9200
+		WithESVersionOption(V6), // default ES Version as v6
 		WithTransportOption(http.DefaultTransport),
 		WithGlobalQueueSizeOption(defaultGlobalQueueSize),
 		WithWorkerSizeOption(defaultWorkerSize),
