@@ -3,9 +3,11 @@ package esworker
 import (
 	"context"
 	"fmt"
-	"github.com/testcontainers/testcontainers-go"
+	"os"
 	"testing"
 	"time"
+
+	"github.com/testcontainers/testcontainers-go"
 
 	"github.com/testcontainers/testcontainers-go/wait"
 
@@ -106,6 +108,10 @@ func TestESProxy_Bulk(t *testing.T) {
 
 	ctx := context.Background()
 	now := time.Now().UnixNano()
+
+	if os.Getenv("WITHOUT_CONTAINER") != "" {
+		return
+	}
 
 	// doc custom
 	acts := []Action{

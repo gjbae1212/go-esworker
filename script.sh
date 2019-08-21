@@ -4,8 +4,13 @@ trap '[ "$?" -eq 0 ] || echo "Error Line:<$LINENO> Error Function:<${FUNCNAME}>"
 cd `dirname $0`
 CURRENT=`pwd`
 
-function test
+function test_without_container
 {
+    export WITHOUT_CONTAINER=TRUE
+    go test -v $(go list ./... | grep -v vendor) --count 1 -race -coverprofile=$CURRENT/coverage.txt -covermode=atomic
+}
+
+function test {
     go test -v $(go list ./... | grep -v vendor) --count 1 -race -coverprofile=$CURRENT/coverage.txt -covermode=atomic
 }
 

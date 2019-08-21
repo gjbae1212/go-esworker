@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/testcontainers/testcontainers-go"
+	"os"
 	"testing"
 	"time"
 
@@ -15,6 +16,10 @@ import (
 func TestWorker(t *testing.T) {
 	assert := assert.New(t)
 	ctx := context.Background()
+
+	if os.Getenv("WITHOUT_CONTAINER") != "" {
+		return
+	}
 
 	escreq := testcontainers.ContainerRequest{
 		Image:        "elasticsearch:6.8.0",

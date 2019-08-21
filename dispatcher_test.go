@@ -3,11 +3,13 @@ package esworker
 import (
 	"context"
 	"fmt"
-	"github.com/testcontainers/testcontainers-go"
 	"log"
 	"net/http"
+	"os"
 	"testing"
 	"time"
+
+	"github.com/testcontainers/testcontainers-go"
 
 	"github.com/testcontainers/testcontainers-go/wait"
 
@@ -188,6 +190,10 @@ func TestDispatcher_Stop(t *testing.T) {
 
 func TestProcessDispatcher(t *testing.T) {
 	assert := assert.New(t)
+
+	if os.Getenv("WITHOUT_CONTAINER") != "" {
+		return
+	}
 
 	ctx := context.Background()
 	escreq := testcontainers.ContainerRequest{
