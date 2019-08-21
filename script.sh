@@ -15,6 +15,11 @@ function bench
   go test -v -run=BenchmarkDispatcher_AddAction -bench=. -benchmem -benchtime 10005x
 }
 
+function codecov
+{
+   /bin/bash <(curl -s https://codecov.io/bash)
+}
+
 
 CMD=$1
 shift
