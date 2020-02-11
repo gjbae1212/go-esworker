@@ -91,25 +91,25 @@ func (bulk *ESResponseBulk) Count() (success int, fail int) {
 	for _, item := range bulk.Items {
 		switch {
 		case item.Index.Status != 0:
-			if item.Index.Status > 201 {
+			if item.Index.Status > 299 {
 				fail++
 			} else {
 				success++
 			}
 		case item.Create.Status != 0:
-			if item.Create.Status > 201 {
+			if item.Create.Status > 299 {
 				fail++
 			} else {
 				success++
 			}
 		case item.Update.Status != 0:
-			if item.Update.Status > 201 {
+			if item.Update.Status > 299 {
 				fail++
 			} else {
 				success++
 			}
 		case item.Delete.Status != 0:
-			if item.Delete.Status > 201 {
+			if item.Delete.Status > 299 {
 				fail++
 			} else {
 				success++
