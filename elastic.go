@@ -132,7 +132,7 @@ func (bulk *ESResponseBulk) ResultError() error {
 				err["id"] = item.Index.Id
 				err["status"] = strconv.Itoa(item.Index.Status)
 				err["type"] = item.Index.Error.Type
-				err["region"] = item.Index.Error.Reason
+				err["reason"] = item.Index.Error.Reason
 				err["caused_by_type"] = item.Index.Error.Cause.Type
 				err["caused_by_reason"] = item.Index.Error.Cause.Reason
 				errMap["index"] = append(errMap["index"], err)
@@ -143,7 +143,7 @@ func (bulk *ESResponseBulk) ResultError() error {
 				err["id"] = item.Create.Id
 				err["status"] = strconv.Itoa(item.Create.Status)
 				err["type"] = item.Create.Error.Type
-				err["region"] = item.Create.Error.Reason
+				err["reason"] = item.Create.Error.Reason
 				err["caused_by_type"] = item.Create.Error.Cause.Type
 				err["caused_by_reason"] = item.Create.Error.Cause.Reason
 				errMap["create"] = append(errMap["index"], err)
@@ -154,7 +154,7 @@ func (bulk *ESResponseBulk) ResultError() error {
 				err["id"] = item.Update.Id
 				err["status"] = strconv.Itoa(item.Update.Status)
 				err["type"] = item.Update.Error.Type
-				err["region"] = item.Update.Error.Reason
+				err["reason"] = item.Update.Error.Reason
 				err["caused_by_type"] = item.Update.Error.Cause.Type
 				err["caused_by_reason"] = item.Update.Error.Cause.Reason
 				errMap["update"] = append(errMap["index"], err)
@@ -165,7 +165,7 @@ func (bulk *ESResponseBulk) ResultError() error {
 				err["id"] = item.Delete.Id
 				err["status"] = strconv.Itoa(item.Delete.Status)
 				err["type"] = item.Delete.Error.Type
-				err["region"] = item.Delete.Error.Reason
+				err["reason"] = item.Delete.Error.Reason
 				err["caused_by_type"] = item.Delete.Error.Cause.Type
 				err["caused_by_reason"] = item.Delete.Error.Cause.Reason
 				errMap["delete"] = append(errMap["index"], err)
