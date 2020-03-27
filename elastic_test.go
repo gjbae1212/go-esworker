@@ -60,6 +60,70 @@ func TestESResponseBulk_Count(t *testing.T) {
 	}
 }
 
+func TestESResponseBulk_ResultErrors(t *testing.T) {
+	assert := assert.New(t)
+
+	tests := map[string]struct {
+		input *ESResponseBulk
+		isErr bool
+	}{
+		"empty": {input: &ESResponseBulk{}, isErr: false},
+		"exist": {input: &ESResponseBulk{
+			Items: []ESResponseItem{
+				ESResponseItem{Index: ESResponseStatus{
+					Status: 400,
+					Error: ESResponseError{
+						Cause: ESResponseCause{
+							Type:   "type2",
+							Reason: "reason2",
+						},
+					},
+				}},
+				ESResponseItem{Index: ESResponseStatus{
+					Status: 400,
+					Error:  ESResponseError{},
+				}},
+				ESResponseItem{Update: ESResponseStatus{
+					Status: 500,
+					Error: ESResponseError{
+						Type:   "type",
+						Reason: "reason",
+						Cause: ESResponseCause{
+							Type:   "type2",
+							Reason: "reason2",
+						},
+					},
+				}},
+				ESResponseItem{Update: ESResponseStatus{
+					Status: 400,
+					Error: ESResponseError{
+						Type:   "type",
+						Reason: "reason",
+					},
+				}},
+				ESResponseItem{Create: ESResponseStatus{
+					Status: 200,
+				}},
+				ESResponseItem{Create: ESResponseStatus{
+					Status: 200,
+				}},
+				ESResponseItem{Create: ESResponseStatus{
+					Status: 400,
+				}},
+				ESResponseItem{Delete: ESResponseStatus{
+					Status: 201,
+				}},
+			},
+		}, isErr: true},
+	}
+
+	for _, t := range tests {
+		err := t.input.ResultError()
+		assert.Equal(t.isErr, err != nil)
+		fmt.Println(err)
+	}
+}
+
 func TestESOperation_GetString(t *testing.T) {
 	assert := assert.New(t)
 

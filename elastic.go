@@ -5,11 +5,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"strconv"
+	"sync"
+
 	es5 "github.com/elastic/go-elasticsearch/v5"
 	es6 "github.com/elastic/go-elasticsearch/v6"
 	es7 "github.com/elastic/go-elasticsearch/v7"
-	"io"
-	"sync"
 
 	es5_logger "github.com/elastic/go-elasticsearch/v5/estransport"
 	es6_logger "github.com/elastic/go-elasticsearch/v6/estransport"
@@ -117,6 +119,71 @@ func (bulk *ESResponseBulk) Count() (success int, fail int) {
 		}
 	}
 	return
+}
+
+// ResultErrors returns bulk result error.
+func (bulk *ESResponseBulk) ResultError() error {
+	errMap := make(map[string][]map[string]string)
+	for _, item := range bulk.Items {
+		switch {
+		case item.Index.Status != 0:
+			if item.Index.Status > 299 {
+				err := map[string]string{}
+				err["id"] = item.Index.Id
+				err["status"] = strconv.Itoa(item.Index.Status)
+				err["type"] = item.Index.Error.Type
+				err["region"] = item.Index.Error.Reason
+				err["caused_by_type"] = item.Index.Error.Cause.Type
+				err["caused_by_reason"] = item.Index.Error.Cause.Reason
+				errMap["index"] = append(errMap["index"], err)
+			}
+		case item.Create.Status != 0:
+			if item.Create.Status > 299 {
+				err := map[string]string{}
+				err["id"] = item.Create.Id
+				err["status"] = strconv.Itoa(item.Create.Status)
+				err["type"] = item.Create.Error.Type
+				err["region"] = item.Create.Error.Reason
+				err["caused_by_type"] = item.Create.Error.Cause.Type
+				err["caused_by_reason"] = item.Create.Error.Cause.Reason
+				errMap["create"] = append(errMap["index"], err)
+			}
+		case item.Update.Status != 0:
+			if item.Update.Status > 299 {
+				err := map[string]string{}
+				err["id"] = item.Update.Id
+				err["status"] = strconv.Itoa(item.Update.Status)
+				err["type"] = item.Update.Error.Type
+				err["region"] = item.Update.Error.Reason
+				err["caused_by_type"] = item.Update.Error.Cause.Type
+				err["caused_by_reason"] = item.Update.Error.Cause.Reason
+				errMap["update"] = append(errMap["index"], err)
+			}
+		case item.Delete.Status != 0:
+			if item.Delete.Status > 299 {
+				err := map[string]string{}
+				err["id"] = item.Delete.Id
+				err["status"] = strconv.Itoa(item.Delete.Status)
+				err["type"] = item.Delete.Error.Type
+				err["region"] = item.Delete.Error.Reason
+				err["caused_by_type"] = item.Delete.Error.Cause.Type
+				err["caused_by_reason"] = item.Delete.Error.Cause.Reason
+				errMap["delete"] = append(errMap["index"], err)
+			}
+		}
+	}
+	if len(errMap) == 0 {
+		return nil
+	} else {
+		msg := ""
+		if data, err := json.Marshal(errMap); err != nil {
+			msg = fmt.Sprintf("%v", errMap)
+		} else {
+			msg = fmt.Sprintf("%s", string(data))
+		}
+
+		return fmt.Errorf("[err][go-esworker-process][bulk] %s", msg)
+	}
 }
 
 // ESProxy is an interface that actually request the elasticserach.

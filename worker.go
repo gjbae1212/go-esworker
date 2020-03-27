@@ -115,5 +115,9 @@ func (w *worker) process() (err error) {
 
 	success, fail := resp.Count()
 	fmt.Printf("[go-esworker-process] success %d, fail %d \n", success, fail)
-	return nil
+	if fail == 0 {
+		return nil
+	} else {
+		return resp.ResultError()
+	}
 }
