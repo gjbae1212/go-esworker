@@ -279,6 +279,10 @@ func (ep *esproxy) Bulk(ctx context.Context, acts []Action) (bulk *ESResponseBul
 		return
 	}
 
+	if body != nil {
+		defer body.Close()
+	}
+
 	// status on response is less than 200 or more than 299.
 	if statusErr {
 		cause := make(map[string]interface{})
