@@ -292,12 +292,11 @@ func (ep *esproxy) Bulk(ctx context.Context, acts []Action) (bulk *ESResponseBul
 		}
 		err = fmt.Errorf("[err] Bulk %+v\n", cause)
 		return
-	}
-
-	// parse response body
-	if suberr := json.NewDecoder(body).Decode(result); suberr != nil {
-		err = suberr
-		return
+	} else { // parse response body
+		if suberr := json.NewDecoder(body).Decode(result); suberr != nil {
+			err = suberr
+			return
+		}
 	}
 
 	bulk = result
