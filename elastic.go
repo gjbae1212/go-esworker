@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"strconv"
 	"sync"
 
@@ -285,12 +286,8 @@ func (ep *esproxy) Bulk(ctx context.Context, acts []Action) (bulk *ESResponseBul
 
 	// status on response is less than 200 or more than 299.
 	if statusErr {
-		cause := make(map[string]interface{})
-		if suberr := json.NewDecoder(body).Decode(&cause); suberr != nil {
-			err = suberr
-			return
-		}
-		err = fmt.Errorf("[err] Bulk %+v\n", cause)
+		msg, _ := ioutil.ReadAll(body)
+		err = fmt.Errorf("[err] Bulk %s\n", msg)
 		return
 	} else { // parse response body
 		if suberr := json.NewDecoder(body).Decode(result); suberr != nil {
