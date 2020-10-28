@@ -33,10 +33,8 @@ const (
 	defaultESDocType   = "_doc"
 	defaultESV5DocType = "doc"
 
-	metaFormatA = `{"%s": {"_index": "%s"}}%s`
-	metaFormatB = `{"%s": {"_index": "%s", "_type": "%s"}}%s`
-	metaFormatC = `{"%s": {"_index": "%s", "_id": "%s"}}%s`
-	metaFormatD = `{"%s": {"_index": "%s", "_type": "%s", "_id": "%s"}}%s`
+	metaFormatA = `{"%s": {"_index": "%s", "_type": "%s"}}%s`
+	metaFormatB = `{"%s": {"_index": "%s", "_type": "%s", "_id": "%s"}}%s`
 )
 
 // GetString converts int to string value.
@@ -222,7 +220,7 @@ func (ep *esproxy) Bulk(ctx context.Context, acts []Action) (bulk *ESResponseBul
 
 	// execute a bulk operation depending on ES version.
 	switch ep.version {
-	case V5: // elasticsearch v5 could possibly have multiple doc_type in an index. (default: doc)
+	case V5: // elasticsearch v5 could possibly have multiple _type in an index. (default: doc)
 		client, suberr := ep.getES5()
 		if suberr != nil {
 			err = suberr
@@ -231,7 +229,6 @@ func (ep *esproxy) Bulk(ctx context.Context, acts []Action) (bulk *ESResponseBul
 		resp, suberr := client.Bulk(
 			bytes.NewReader(buf),
 			client.Bulk.WithContext(ctx),
-			client.Bulk.WithDocumentType(defaultESV5DocType),
 		)
 		if suberr != nil {
 			err = suberr
@@ -241,7 +238,7 @@ func (ep *esproxy) Bulk(ctx context.Context, acts []Action) (bulk *ESResponseBul
 			statusErr = true
 		}
 		body = resp.Body
-	case V6: // elasticsearch v6 must have only one the doc_type in an index. (default: _doc)
+	case V6: // elasticsearch v6 must have only one the _type in an index. (default: _doc)
 		client, suberr := ep.getES6()
 		if suberr != nil {
 			err = suberr
@@ -250,7 +247,7 @@ func (ep *esproxy) Bulk(ctx context.Context, acts []Action) (bulk *ESResponseBul
 		resp, suberr := client.Bulk(
 			bytes.NewReader(buf),
 			client.Bulk.WithContext(ctx),
-			client.Bulk.WithDocumentType(defaultESDocType))
+		)
 		if suberr != nil {
 			err = suberr
 			return
@@ -259,7 +256,7 @@ func (ep *esproxy) Bulk(ctx context.Context, acts []Action) (bulk *ESResponseBul
 			statusErr = true
 		}
 		body = resp.Body
-	case V7: // elasticsearch v7 must have only one the doc_type in an index. (default: _doc)
+	case V7: // elasticsearch v7 must have only one the _type in an index. (default: _doc)
 		client, suberr := ep.getES7()
 		if suberr != nil {
 			err = suberr
@@ -268,7 +265,7 @@ func (ep *esproxy) Bulk(ctx context.Context, acts []Action) (bulk *ESResponseBul
 		resp, suberr := client.Bulk(
 			bytes.NewReader(buf),
 			client.Bulk.WithContext(ctx),
-			client.Bulk.WithDocumentType(defaultESDocType))
+		)
 		if suberr != nil {
 			err = suberr
 			return
@@ -316,11 +313,17 @@ func (ep *esproxy) makeReader(acts []Action) ([]byte, error) {
 		ep.bufPool.Put(buf)
 	}()
 
+	// extract default _type(table)
+	defaultType := defaultESDocType
+	if ep.version == V5 {
+		defaultType = defaultESV5DocType
+	}
+
 	for _, act := range acts {
 		// buffer
 		var meta []byte
 		if act.GetDocType() != "" && act.GetID() != "" {
-			meta = []byte(fmt.Sprintf(metaFormatD,
+			meta = []byte(fmt.Sprintf(metaFormatB,
 				act.GetOperation().GetString(),
 				act.GetIndex(),
 				act.GetDocType(),
@@ -328,16 +331,17 @@ func (ep *esproxy) makeReader(acts []Action) ([]byte, error) {
 				"\n",
 			))
 		} else if act.GetDocType() != "" {
-			meta = []byte(fmt.Sprintf(metaFormatB,
+			meta = []byte(fmt.Sprintf(metaFormatA,
 				act.GetOperation().GetString(),
 				act.GetIndex(),
 				act.GetDocType(),
 				"\n",
 			))
 		} else if act.GetID() != "" {
-			meta = []byte(fmt.Sprintf(metaFormatC,
+			meta = []byte(fmt.Sprintf(metaFormatB,
 				act.GetOperation().GetString(),
 				act.GetIndex(),
+				defaultType,
 				act.GetID(),
 				"\n",
 			))
@@ -345,6 +349,7 @@ func (ep *esproxy) makeReader(acts []Action) ([]byte, error) {
 			meta = []byte(fmt.Sprintf(metaFormatA,
 				act.GetOperation().GetString(),
 				act.GetIndex(),
+				defaultType,
 				"\n",
 			))
 		}
